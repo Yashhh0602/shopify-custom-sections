@@ -1,3 +1,7 @@
+
+
+https://github.com/user-attachments/assets/61c915a8-120f-4e50-9eb6-8e0692d0d0b7
+
 # Shopify Custom Section — Featured Quick View
 
 A production-ready custom Shopify Liquid section built from scratch.
