@@ -1,0 +1,169 @@
+{% assign featured_collection = collections.all %}
+
+<section class="fqv-section">
+  <div class="fqv-header">
+    <span class="fqv-eyebrow">Our Collection</span>
+    <h2>{{ section.settings.title }}</h2>
+    <div class="fqv-underline"></div>
+  </div>
+
+  <div class="fqv-grid">
+    {% for product in featured_collection.products limit: section.settings.product_limit %}
+      <div class="fqv-card">
+
+        <div class="fqv-badges">
+          {% if product.compare_at_price > product.price %}
+            <span class="badge badge--sale">Sale</span>
+          {% endif %}
+          {% assign thirty_days_ago = 'now' | date: '%s' | plus: 0 | minus: 2592000 %}
+          {% assign product_date = product.created_at | date: '%s' | plus: 0 %}
+          {% if product_date > thirty_days_ago %}
+            <span class="badge badge--new">New</span>
+          {% endif %}
+        </div>
+
+        <div class="fqv-image-wrap">
+          {% if product.featured_image %}
+            <img
+              src="{{ product.featured_image | image_url: width: 600 }}"
+              alt="{{ product.featured_image.alt | escape }}"
+              loading="lazy"
+              width="600"
+              height="600"
+            >
+          {% else %}
+            {{ 'product-1' | placeholder_svg_tag: 'fqv-placeholder' }}
+          {% endif %}
+
+          <div class="fqv-overlay">
+            <button
+              class="fqv-quickview-btn"
+              onclick="openQuickView(
+                '{{ product.handle }}',
+                '{{ product.title | escape }}',
+                '{{ product.price | money }}',
+                '{% if product.compare_at_price > product.price %}{{ product.compare_at_price | money }}{% endif %}',
+                '{{ product.featured_image | image_url: width: 600 }}',
+                '{{ product.description | strip_html | truncate: 120 | escape }}',
+                '{{ product.url }}'
+              )"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+              Quick View
+            </button>
+          </div>
+        </div>
+
+        <div class="fqv-info">
+          <p class="fqv-vendor">{{ product.vendor }}</p>
+          <h3 class="fqv-product-title">
+            <a href="{{ product.url }}">{{ product.title }}</a>
+          </h3>
+          <div class="fqv-price">
+            {% if product.compare_at_price > product.price %}
+              <span class="price--compare">{{ product.compare_at_price | money }}</span>
+            {% endif %}
+            <span class="price--current">{{ product.price | money }}</span>
+          </div>
+        </div>
+
+      </div>
+    {% else %}
+      <p class="fqv-empty">No products found in this collection.</p>
+    {% endfor %}
+  </div>
+</section>
+
+{%- comment -%} ===== QUICK VIEW MODAL ===== {%- endcomment -%}
+<div id="fqv-modal" class="fqv-modal" onclick="fqvBackdropClose(event)">
+  <div class="fqv-modal-content">
+    <button class="fqv-modal-close" onclick="closeQuickView()">✕</button>
+    <div id="fqv-modal-body" class="fqv-modal-body">
+      <div class="fqv-modal-image">
+       <img id="fqv-modal-img" src="" alt="" width="600" height="600" style="display:none;">
+      </div>
+      <div class="fqv-modal-details">
+        <p id="fqv-modal-vendor" class="fqv-modal-vendor"></p>
+        <h2 id="fqv-modal-title" class="fqv-modal-title"></h2>
+        <div class="fqv-modal-prices">
+          <span id="fqv-modal-compare" class="price--compare"></span>
+          <span id="fqv-modal-price" class="price--current"></span>
+        </div>
+        <p id="fqv-modal-desc" class="fqv-modal-desc"></p>
+        <div class="fqv-modal-actions">
+          <a id="fqv-modal-link" href="#" class="fqv-btn-primary">View Full Details</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{{ 'fqv-styles.css' | asset_url | stylesheet_tag }}
+
+<script>
+  function openQuickView(handle, title, price, comparePrice, image, description, url) {
+    const modal = document.getElementById('fqv-modal');
+    const modalImg = document.getElementById('fqv-modal-img');
+    modalImg.src = image;
+    modalImg.alt = title;
+    modalImg.style.display = 'block';
+    document.getElementById('fqv-modal-title').textContent = title;
+    document.getElementById('fqv-modal-price').textContent = price;
+    document.getElementById('fqv-modal-vendor').textContent = handle.replace(/-/g, ' ');
+    document.getElementById('fqv-modal-desc').textContent = description;
+    document.getElementById('fqv-modal-link').href = url;
+
+    const compare = document.getElementById('fqv-modal-compare');
+    compare.textContent = comparePrice || '';
+    compare.style.display = comparePrice ? 'inline' : 'none';
+
+    modal.classList.add('active');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeQuickView() {
+    document.getElementById('fqv-modal').classList.remove('active');
+    document.body.style.overflow = '';
+  }
+
+  function fqvBackdropClose(e) {
+    if (e.target === document.getElementById('fqv-modal')) closeQuickView();
+  }
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeQuickView();
+  });
+</script>
+
+{% schema %}
+{
+  "name": "Featured Quick View",
+  "settings": [
+    {
+      "type": "text",
+      "id": "title",
+      "label": "Section Title",
+      "default": "Featured Products"
+    },
+    {
+      "type": "collection",
+      "id": "collection",
+      "label": "Collection"
+    },
+    {
+      "type": "range",
+      "id": "product_limit",
+      "label": "Number of Products",
+      "min": 2,
+      "max": 12,
+      "step": 1,
+      "default": 4
+    }
+  ],
+  "presets": [
+    {
+      "name": "Featured Quick View"
+    }
+  ]
+}
+{% endschema %}
